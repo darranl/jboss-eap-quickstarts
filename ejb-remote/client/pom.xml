@@ -82,7 +82,7 @@
        <dependency>
            <groupId>org.jboss</groupId>
            <artifactId>jboss-ejb-client</artifactId>
-           <version>1.0.0.Beta7</version>
+           <version>1.0.0.Beta9</version>
            <scope>runtime</scope>
        </dependency>
 
