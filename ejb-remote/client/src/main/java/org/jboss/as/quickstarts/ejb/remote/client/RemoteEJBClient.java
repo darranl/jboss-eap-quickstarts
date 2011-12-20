@@ -45,7 +45,7 @@ public class RemoteEJBClient {
         invokeStatelessBean();
 
         // Invoke a stateful bean
-        invokeStatefulBean();
+        //invokeStatefulBean();
     }
 
     /**

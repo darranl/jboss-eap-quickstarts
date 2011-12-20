@@ -22,18 +22,25 @@
 
 package org.jboss.as.quickstarts.ejb.remote.stateless;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ejb.Remote;
 import javax.ejb.Stateless;
+import org.jboss.ejb3.annotation.SecurityDomain;
 
 /**
  * @author Jaikiran Pai
  */
 @Stateless
+@SecurityDomain("Calculator")
 @Remote(RemoteCalculator.class)
 public class CalculatorBean implements RemoteCalculator {
 
     @Override
+    @RolesAllowed("Banker")
     public int add(int a, int b) {
+        
+        new Throwable("TRACE").printStackTrace();
+        
         return a + b;
     }
 
