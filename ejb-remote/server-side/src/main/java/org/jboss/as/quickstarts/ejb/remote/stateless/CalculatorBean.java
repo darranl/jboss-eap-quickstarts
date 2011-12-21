@@ -22,7 +22,9 @@
 
 package org.jboss.as.quickstarts.ejb.remote.stateless;
 
+import javax.annotation.Resource;
 import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJBContext;
 import javax.ejb.Remote;
 import javax.ejb.Stateless;
 import org.jboss.ejb3.annotation.SecurityDomain;
@@ -34,12 +36,17 @@ import org.jboss.ejb3.annotation.SecurityDomain;
 @SecurityDomain("Calculator")
 @Remote(RemoteCalculator.class)
 public class CalculatorBean implements RemoteCalculator {
+    
+    @Resource
+    private EJBContext ctx;
 
     @Override
     @RolesAllowed("Banker")
     public int add(int a, int b) {
         
         new Throwable("TRACE").printStackTrace();
+        
+        System.out.println(ctx.getCallerPrincipal().toString());
         
         return a + b;
     }
