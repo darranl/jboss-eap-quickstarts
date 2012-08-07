@@ -33,6 +33,9 @@ import java.util.Hashtable;
 public class RemoteEJBClient {
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("javax.net.ssl.trustStore", "/home/darranl/src/jbossas7/quickstart/ejb-remote/stores/client.truststore");
+        System.setProperty("javax.net.ssl.trustStorePassword", "truststore_password");        
+        
         // Invoke a stateless bean
         invokeStatelessBean();
 
