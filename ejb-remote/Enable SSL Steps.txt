@@ -69,6 +69,78 @@ Certificate was added to keystore
         System.setProperty("javax.net.ssl.trustStorePassword", "truststore_password");
 
 
+** Create Client Key **
+
+darranl@localhost ~/src/jbossas7/quickstart/ejb-remote/stores (ssl_testing) $ keytool -genkey -alias user1 -keyalg RSA -keystore client.keystore -validity 365
+Enter keystore password:  
+Re-enter new password: 
+What is your first and last name?
+  [Unknown]:  User1
+What is the name of your organizational unit?
+  [Unknown]:  JBoss
+What is the name of your organization?
+  [Unknown]:  Red Hat
+What is the name of your City or Locality?
+  [Unknown]:  Farnborough
+What is the name of your State or Province?
+  [Unknown]:  Surrey
+What is the two-letter country code for this unit?
+  [Unknown]:  GB
+Is CN=User1, OU=JBoss, O=Red Hat, L=Farnborough, ST=Surrey, C=GB correct?
+  [no]:  yes
+
+Enter key password for <user1>
+	(RETURN if same as keystore password):
+
+** Export Client Key **
+
+darranl@localhost ~/src/jbossas7/quickstart/ejb-remote/stores (ssl_testing) $ keytool -exportcert -alias user1 -file user1.cert -keystore client.keystore
+Enter keystore password:  
+Certificate stored in file <user1.cert>
+
+
+** Create Server Truststore **
+
+darranl@localhost ~/src/jbossas7/quickstart/ejb-remote/stores (ssl_testing) $ keytool -importcert -file user1.cert -keystore server.truststore
+Enter keystore password:  
+Re-enter new password: 
+Owner: CN=User1, OU=JBoss, O=Red Hat, L=Farnborough, ST=Surrey, C=GB
+Issuer: CN=User1, OU=JBoss, O=Red Hat, L=Farnborough, ST=Surrey, C=GB
+Serial number: 50212674
+Valid from: Tue Aug 07 15:30:12 BST 2012 until: Wed Aug 07 15:30:12 BST 2013
+Certificate fingerprints:
+	 MD5:  1B:D7:35:E2:C7:71:2D:02:B9:F1:BA:AC:38:AC:81:56
+	 SHA1: 4A:8C:BD:6F:3B:E5:57:53:05:5E:1F:DD:01:03:2A:3B:31:0C:21:D8
+	 Signature algorithm name: SHA1withRSA
+	 Version: 3
+Trust this certificate? [no]:  yes
+Certificate was added to keystore
+
+
+** Update Realm To Use Truststore **
+
+            <security-realm name="ApplicationRealm">
+                <server-identities>
+                   <ssl>
+                     <keystore path="/home/darranl/src/jbossas7/quickstart/ejb-remote/stores/server.keystore" keystore-password="keystore_password" />
+                   </ssl>
+                </server-identities>
+
+                <authentication>
+                    <truststore path="/home/darranl/src/jbossas7/quickstart/ejb-remote/stores/server.truststore" keystore-password="truststore_password" />
+                </authentication>
+                <authorization>
+                    <properties path="application-roles.properties" relative-to="jboss.server.config.dir"/>
+                </authorization>
+            </security-realm>
+
+
+** Add Properties To Client **
+
+        System.setProperty("javax.net.ssl.keyStore", "/home/darranl/src/jbossas7/quickstart/ejb-remote/stores/client.keystore");
+        System.setProperty("javax.net.ssl.keyStorePassword", "keystore_password");
+
+
 
 
 
