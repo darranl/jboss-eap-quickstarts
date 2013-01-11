@@ -42,6 +42,7 @@ public class RemoteClient {
         registerClientSecurityInterceptor();
         SecuredEJBRemote remote = lookupEJB();
 
+        /*
         System.out.println("{RC} Initial Call to getSecurityInformation() - " + remote.getSecurityInformation());
 
         System.out.println("{RC} Verifying methods requiring roles 'RoleOne' and 'RoleTwo' are inaccessible.");
@@ -58,7 +59,7 @@ public class RemoteClient {
         } catch (EJBAccessException e) {
             System.out.println("{RC} Call to roleTwoMethod was correctly rejected.");
         }
-
+        */
         System.out.println("{RC} Now attempting calls as AppUserOne.");
         ClientSecurityInterceptor.setDesiredUser("AppUserOne");
 

@@ -50,7 +50,7 @@ public class ServerSecurityInterceptor {
         Map<String, Object> contextData = invocationContext.getContextData();
         if (contextData.containsKey(DELEGATED_USER_KEY)) {
             desiredUser = new SimplePrincipal((String) contextData.get(DELEGATED_USER_KEY));
-            System.out.println("Remote side requesting call as " + desiredUser);
+            System.out.println("Remote side requesting call as " + desiredUser.getName());
 
             Connection con = SecurityActions.remotingContextGetConnection();
             if (con != null) {
@@ -75,6 +75,7 @@ public class ServerSecurityInterceptor {
                         connectionUser));
                 // keep track that we switched the security context
                 contextSet = true;
+                SecurityActions.remotingContextClear();
             }
 
             return invocationContext.proceed();
