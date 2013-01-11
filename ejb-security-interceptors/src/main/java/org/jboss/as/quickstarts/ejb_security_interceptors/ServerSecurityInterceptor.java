@@ -73,6 +73,8 @@ public class ServerSecurityInterceptor {
                 // so now we attempt the switch.
                 cachedSecurityContext = SecurityActions.securityContextSetPrincipalInfo(desiredUser, new OuterUserCredential(
                         connectionUser));
+                // keep track that we switched the security context
+                contextSet = true;
             }
 
             return invocationContext.proceed();
@@ -80,6 +82,7 @@ public class ServerSecurityInterceptor {
             e.printStackTrace();
             throw new EJBAccessException("Unable to attempt switching of user.");
         } finally {
+            // switch back to original security context
             if (contextSet) {
                 SecurityActions.securityContextSet(cachedSecurityContext);
             }
