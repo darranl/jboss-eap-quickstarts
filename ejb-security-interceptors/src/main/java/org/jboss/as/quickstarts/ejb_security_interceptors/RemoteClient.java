@@ -42,7 +42,7 @@ public class RemoteClient {
         registerClientSecurityInterceptor();
         SecuredEJBRemote remote = lookupEJB();
 
-        /*
+        
         System.out.println("{RC} Initial Call to getSecurityInformation() - " + remote.getSecurityInformation());
 
         System.out.println("{RC} Verifying methods requiring roles 'RoleOne' and 'RoleTwo' are inaccessible.");
@@ -59,11 +59,11 @@ public class RemoteClient {
         } catch (EJBAccessException e) {
             System.out.println("{RC} Call to roleTwoMethod was correctly rejected.");
         }
-        */
+        
         System.out.println("{RC} Now attempting calls as AppUserOne.");
         ClientSecurityInterceptor.setDesiredUser("AppUserOne");
 
-        System.out.println("{RC} Initial Call to getSecurityInformation() - " + remote.getSecurityInformation());
+        System.out.println("{RC} Call to getSecurityInformation() - " + remote.getSecurityInformation());
 
         System.out
                 .println("{RC} Verifying method requiring role 'RoleOne' is accessible and the method requiring 'RoleTwo' is inaccessible.");
@@ -80,6 +80,27 @@ public class RemoteClient {
         } catch (EJBAccessException e) {
             System.out.println("{RC} Call to roleTwoMethod was correctly rejected.");
         }
+        
+        System.out.println("{RC} Now attempting calls as AppUserTwo.");
+        ClientSecurityInterceptor.setDesiredUser("AppUserTwo");
+
+        System.out.println("{RC} Call to getSecurityInformation() - " + remote.getSecurityInformation());
+
+        System.out
+                .println("{RC} Verifying method requiring role 'RoleOne' is inaccessible and the method requiring 'RoleTwo' is accessible.");
+        try {
+            remote.roleOneMethod();
+            System.err.println("{RC} Call to roleOneMethod was incorrectly accepted..");
+        } catch (EJBAccessException e) {
+            System.out.println("{RC} Call to roleOneMethod was corectly rejected.");
+        }
+
+        try {
+            remote.roleTwoMethod();
+            System.out.println("{RC} Call to roleTwoMethod was corectly accepted.");
+        } catch (EJBAccessException e) {
+            System.err.println("{RC} Call to roleTwoMethod was incorrectly rejected.");
+        }        
 
         System.out.println("\n\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n\n");
     }

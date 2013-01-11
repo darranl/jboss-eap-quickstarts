@@ -34,7 +34,7 @@ import org.jboss.security.auth.spi.AbstractServerLoginModule;
 /**
  * Login module to make the decision if one user can ask for the current request to be switched to an alternative specified
  * user.
- *
+ * 
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class DelegationLoginModule extends AbstractServerLoginModule {
@@ -75,24 +75,34 @@ public class DelegationLoginModule extends AbstractServerLoginModule {
         if (credential instanceof OuterUserCredential) {
             // This credential type will only be seen for a delegation request, if not seen then the request is not for us.
 
-            // TODO - At this point we make the decision can the user represented by the ObjectCredential request to run as
-            // the user represented by name.
-            // For now go ahead and accept.
+            if (delegationAcceptable(name, (OuterUserCredential) credential)) {
 
-            identity = new SimplePrincipal(name);
-            if (getUseFirstPass()) {
-                String userName = identity.getName();
-                if (log.isDebugEnabled())
-                    log.debug("Storing username '" + userName + "' and empty password");
-                // Add the username and an empty password to the shared state map
-                sharedState.put("javax.security.auth.login.name", identity);
-                sharedState.put("javax.security.auth.login.password", "");
+                identity = new SimplePrincipal(name);
+                if (getUseFirstPass()) {
+                    String userName = identity.getName();
+                    if (log.isDebugEnabled())
+                        log.debug("Storing username '" + userName + "' and empty password");
+                    // Add the username and an empty password to the shared state map
+                    sharedState.put("javax.security.auth.login.name", identity);
+                    sharedState.put("javax.security.auth.login.password", "");
+                }
+                loginOk = true;
+                return true;
             }
-            loginOk = true;
-            return true;
         }
 
         return false; // Attempted login but not successful.
+    }
+
+    /**
+     * Make a trust user to decide if the user switch is acceptable.
+     * 
+     * @param requestedUser - The user this request wants to be authorized as.
+     * @param connectionUser - The use of the connection to the server.
+     * @return true if a switch is acceptable, false otherwise.
+     */
+    protected boolean delegationAcceptable(String requestedUser, OuterUserCredential connectionUser) {
+        return true;
     }
 
     @Override
