@@ -45,43 +45,81 @@ final class SecurityActions {
      */
 
     static void remotingContextClear() {
-        if (System.getSecurityManager() == null) {
-            RemotingContext.clear();
-        } else {
-            AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                @Override
-                public Object run() {
-                    RemotingContext.clear();
-                    return null;
-                }
-            });
-        }
+        remotingContextActions().clear();
     }
 
     static Connection remotingContextGetConnection() {
-        if (System.getSecurityManager() == null) {
-            return RemotingContext.getConnection();
-        } else {
-            return AccessController.doPrivileged(new PrivilegedAction<Connection>() {
-                @Override
-                public Connection run() {
-                    return RemotingContext.getConnection();
-                }
-            });
-        }
+        return remotingContextActions().getConnection();
     }
 
     static boolean remotingContextIsSet() {
-        if (System.getSecurityManager() == null) {
-            return RemotingContext.isSet();
-        } else {
-            return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                @Override
-                public Boolean run() {
-                    return RemotingContext.isSet();
+        return remotingContextActions().isSet();
+    }
+
+    private static RemotingContextActions remotingContextActions() {
+        return System.getSecurityManager() == null ? RemotingContextActions.NON_PRIVILEGED : RemotingContextActions.PRIVILEGED;
+    }
+
+    private interface RemotingContextActions {
+
+        void clear();
+
+        Connection getConnection();
+
+        boolean isSet();
+
+        RemotingContextActions NON_PRIVILEGED = new RemotingContextActions() {
+
+            public void clear() {
+                RemotingContext.clear();
+            }
+
+            public boolean isSet() {
+                return RemotingContext.isSet();
+            }
+
+            public Connection getConnection() {
+                return RemotingContext.getConnection();
+            }
+        };
+
+        RemotingContextActions PRIVILEGED = new RemotingContextActions() {
+
+            PrivilegedAction<Void> CLEAR_ACTION = new PrivilegedAction<Void>() {
+
+                public Void run() {
+                    NON_PRIVILEGED.clear();
+                    return null;
                 }
-            });
-        }
+            };
+
+            PrivilegedAction<Boolean> IS_SET_ACTION = new PrivilegedAction<Boolean>() {
+
+                public Boolean run() {
+                    return NON_PRIVILEGED.isSet();
+                }
+            };
+
+            PrivilegedAction<Connection> GET_CONNECTION_ACTION = new PrivilegedAction<Connection>() {
+
+                public Connection run() {
+                    return NON_PRIVILEGED.getConnection();
+                }
+            };
+
+            public void clear() {
+                AccessController.doPrivileged(CLEAR_ACTION);
+            }
+
+            public boolean isSet() {
+                return AccessController.doPrivileged(IS_SET_ACTION);
+            }
+
+            public Connection getConnection() {
+                return AccessController.doPrivileged(GET_CONNECTION_ACTION);
+            }
+        };
+
     }
 
     /*
@@ -89,40 +127,71 @@ final class SecurityActions {
      */
 
     static void securityContextSet(final SecurityContext context) {
-        if (System.getSecurityManager() == null) {
-            SecurityContextAssociation.setSecurityContext(context);
-        } else {
-            AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                public Object run() {
-                    SecurityContextAssociation.setSecurityContext(context);
-                    return null;
-                }
-            });
-        }
+        securityContextActions().setSecurityContext(context);
     }
 
     /**
      * @return The SecurityContext previously set if any.
      */
-    static SecurityContext securityContextSetPrincipalInfo(final Principal principal, final Object credential) throws Exception {
-        try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<SecurityContext>() {
+    static SecurityContext securityContextSetPrincipalInfo(final Principal principal, final OuterUserCredential credential)
+            throws Exception {
+        return securityContextActions().setPrincipalInfo(principal, credential);
+    }
 
-                @Override
-                public SecurityContext run() throws Exception {
-                    SecurityContext currentContext = SecurityContextAssociation.getSecurityContext();
+    private static SecurityContextActions securityContextActions() {
+        return System.getSecurityManager() == null ? SecurityContextActions.NON_PRIVILEGED : SecurityContextActions.PRIVILEGED;
+    }
 
-                    SecurityContext nextContext = SecurityContextFactory.createSecurityContext(principal, credential,
-                            new Subject(), "USER_DELEGATION");
-                    SecurityContextAssociation.setSecurityContext(nextContext);
+    private interface SecurityContextActions {
 
-                    return currentContext;
+        void setSecurityContext(final SecurityContext context);
+
+        SecurityContext setPrincipalInfo(final Principal principal, final OuterUserCredential credential) throws Exception;
+
+        SecurityContextActions NON_PRIVILEGED = new SecurityContextActions() {
+
+            public void setSecurityContext(SecurityContext context) {
+                SecurityContextAssociation.setSecurityContext(context);
+            }
+
+            public SecurityContext setPrincipalInfo(Principal principal, OuterUserCredential credential) throws Exception {
+                SecurityContext currentContext = SecurityContextAssociation.getSecurityContext();
+
+                SecurityContext nextContext = SecurityContextFactory.createSecurityContext(principal, credential,
+                        new Subject(), "USER_DELEGATION");
+                SecurityContextAssociation.setSecurityContext(nextContext);
+
+                return currentContext;
+            }
+        };
+
+        SecurityContextActions PRIVILEGED = new SecurityContextActions() {
+
+            public void setSecurityContext(final SecurityContext context) {
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+
+                    public Void run() {
+                        NON_PRIVILEGED.setSecurityContext(context);
+                        return null;
+                    }
+                });
+            }
+
+            public SecurityContext setPrincipalInfo(final Principal principal, final OuterUserCredential credential)
+                    throws Exception {
+                try {
+                    return AccessController.doPrivileged(new PrivilegedExceptionAction<SecurityContext>() {
+
+                        public SecurityContext run() throws Exception {
+                            return NON_PRIVILEGED.setPrincipalInfo(principal, credential);
+                        }
+                    });
+                } catch (PrivilegedActionException e) {
+                    throw e.getException();
                 }
+            }
+        };
 
-            });
-        } catch (PrivilegedActionException pae) {
-            throw pae.getException();
-        }
     }
 
 }
