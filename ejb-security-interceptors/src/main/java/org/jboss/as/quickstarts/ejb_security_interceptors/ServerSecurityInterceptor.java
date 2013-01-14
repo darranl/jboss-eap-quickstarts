@@ -24,9 +24,11 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 import javax.resource.spi.IllegalStateException;
 
+import org.jboss.as.controller.security.SubjectUserInfo;
+import org.jboss.as.domain.management.security.RealmUser;
 import org.jboss.as.security.remoting.RemotingContext;
 import org.jboss.remoting3.Connection;
-import org.jboss.remoting3.security.UserPrincipal;
+import org.jboss.remoting3.security.UserInfo;
 import org.jboss.security.SecurityContext;
 
 /**
@@ -45,7 +47,7 @@ public class ServerSecurityInterceptor {
         System.out.println("RemotingContext.isSet()=" + RemotingContext.isSet());
 
         Principal desiredUser = null;
-        UserPrincipal connectionUser = null;
+        RealmUser connectionUser = null;
 
         Map<String, Object> contextData = invocationContext.getContextData();
         if (contextData.containsKey(DELEGATED_USER_KEY)) {
@@ -53,13 +55,19 @@ public class ServerSecurityInterceptor {
             System.out.println("Remote side requesting call as " + desiredUser.getName());
 
             Connection con = SecurityActions.remotingContextGetConnection();
+
             if (con != null) {
-                for (Principal current : con.getPrincipals()) {
-                    if (current instanceof UserPrincipal) {
-                        connectionUser = (UserPrincipal) current;
-                        break;
+                UserInfo userInfo = con.getUserInfo();
+                if (userInfo instanceof SubjectUserInfo) {
+                    SubjectUserInfo sinfo = (SubjectUserInfo) userInfo;
+                    for (Principal current : sinfo.getPrincipals()) {
+                        if (current instanceof RealmUser) {
+                            connectionUser = (RealmUser) current;
+                            break;
+                        }
                     }
                 }
+
             } else {
                 throw new IllegalStateException("Delegation user requested but no user on connection found.");
             }

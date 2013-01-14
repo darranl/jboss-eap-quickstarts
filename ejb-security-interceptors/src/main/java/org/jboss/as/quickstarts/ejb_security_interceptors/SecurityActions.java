@@ -194,4 +194,38 @@ final class SecurityActions {
 
     }
 
+    /*
+     * ClassLoader Actions
+     */
+
+    static ClassLoader getContextClassLoader() {
+        return (System.getSecurityManager() == null ? ContextClassLoaderAction.NON_PRIVILEGED
+                : ContextClassLoaderAction.PRIVILEGED).getContextClassLoader();
+    }
+
+    private interface ContextClassLoaderAction {
+
+        ClassLoader getContextClassLoader();
+
+        ContextClassLoaderAction NON_PRIVILEGED = new ContextClassLoaderAction() {
+
+            public ClassLoader getContextClassLoader() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        };
+
+        ContextClassLoaderAction PRIVILEGED = new ContextClassLoaderAction() {
+
+            private PrivilegedAction<ClassLoader> GET_CONTEXT_CLASS_LOADER = new PrivilegedAction<ClassLoader>() {
+
+                public ClassLoader run() {
+                    return NON_PRIVILEGED.getContextClassLoader();
+                }
+            };
+
+            public ClassLoader getContextClassLoader() {
+                return AccessController.doPrivileged(GET_CONTEXT_CLASS_LOADER);
+            }
+        };
+    }
 }

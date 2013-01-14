@@ -102,6 +102,24 @@ public class RemoteClient {
             System.err.println("{RC} Call to roleTwoMethod was incorrectly rejected.");
         }        
 
+        ClientSecurityInterceptor.setDesiredUser(null);
+        System.out.println("{RC} Back as ConnectionUser Call to getSecurityInformation() - " + remote.getSecurityInformation());
+
+        System.out.println("{RC} Verifying methods requiring roles 'RoleOne' and 'RoleTwo' are inaccessible.");
+        try {
+            remote.roleOneMethod();
+            System.err.println("{RC} Call to roleOneMethod was incorectly accepted.");
+        } catch (EJBAccessException e) {
+            System.out.println("{RC} Call to roleOneMethod was correctly rejected.");
+        }
+
+        try {
+            remote.roleTwoMethod();
+            System.err.println("{RC} Call to roleTwoMethod was incorectly accepted.");
+        } catch (EJBAccessException e) {
+            System.out.println("{RC} Call to roleTwoMethod was correctly rejected.");
+        }        
+        
         System.out.println("\n\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n\n");
     }
 

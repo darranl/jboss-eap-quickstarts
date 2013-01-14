@@ -16,9 +16,13 @@
  */
 package org.jboss.as.quickstarts.ejb_security_interceptors;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.security.Principal;
 import java.security.acl.Group;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -39,14 +43,33 @@ import org.jboss.security.auth.spi.AbstractServerLoginModule;
  */
 public class DelegationLoginModule extends AbstractServerLoginModule {
 
+    private static final String DELEGATION_PROPERTIES = "delegationProperties";
+
+    private static final String DEFAULT_DELEGATION_PROPERTIES = "delegation-mapping.properties";
+
+    private Properties delegationMappings;
+
     private CallbackHandler callbackHandler;
 
     private Principal identity;
 
     @Override
     public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
+        addValidOptions(new String[] { DELEGATION_PROPERTIES });
         super.initialize(subject, callbackHandler, sharedState, options);
         this.callbackHandler = callbackHandler;
+
+        String propertiesName;
+        if (options.containsKey(DELEGATION_PROPERTIES)) {
+            propertiesName = (String) options.get(DELEGATION_PROPERTIES);
+        } else {
+            propertiesName = DEFAULT_DELEGATION_PROPERTIES;
+        }
+        try {
+            delegationMappings = loadProperties(propertiesName);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(String.format("Unable to load properties '%s'", propertiesName), e);
+        }
     }
 
     @Override
@@ -97,12 +120,60 @@ public class DelegationLoginModule extends AbstractServerLoginModule {
     /**
      * Make a trust user to decide if the user switch is acceptable.
      * 
+     * The default implementation checks the Properties for the user that opened the connection looking for a match, the
+     * property read is then used to check if the connection user can delegate to the user specified.
+     * 
+     * The following entries will be checked in the Properties in this order: - user@realm - This is an exact match for the user
+     * / realm combination of the connection user. user@* - This entry allows a match by username for any realm. *@realm - This
+     * entry allows for any user in the realm specified. * - This matches all users.
+     * 
+     * Once an entry has been found the Properties will not be read again, even if the entry loaded does not allow delegation.
+     * 
+     * The value for the property is either '*' which means delegation to any user is allowed or a comma separate list of users
+     * that can be delegated to.
+     * 
      * @param requestedUser - The user this request wants to be authorized as.
      * @param connectionUser - The use of the connection to the server.
      * @return true if a switch is acceptable, false otherwise.
      */
     protected boolean delegationAcceptable(String requestedUser, OuterUserCredential connectionUser) {
-        return true;
+        if (delegationMappings == null) {
+            return false;
+        }
+
+        String[] allowedMappings = loadPropertyValue(connectionUser.getName(), connectionUser.getRealm());
+        if (allowedMappings.length == 1 && "*".equals(allowedMappings[1])) {
+            // A wild card mapping was found.
+            return true;
+        }
+        for (String current : allowedMappings) {
+            if (requestedUser.equals(current)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private String[] loadPropertyValue(final String userName, final String realm) {
+        String value = null;
+
+        value = delegationMappings.getProperty(userName + "@" + realm);
+        if (value == null) {
+            value = delegationMappings.getProperty(userName + "@*");
+        }
+        if (value == null) {
+            value = delegationMappings.getProperty("*@" + realm);
+        }
+        if (value == null) {
+            value = delegationMappings.getProperty("*");
+        }
+
+        if (value == null) {
+            return new String[0];
+        } else {
+            return value.split(",");
+        }
     }
 
     @Override
@@ -117,6 +188,20 @@ public class DelegationLoginModule extends AbstractServerLoginModule {
         Group[] groups = { roles, callerPrincipal };
         callerPrincipal.addMember(getIdentity());
         return groups;
+    }
+
+    private Properties loadProperties(final String name) throws IOException {
+        ClassLoader classLoader = SecurityActions.getContextClassLoader();
+        URL url = classLoader.getResource(name);
+        InputStream is = url.openStream();
+        try {
+            Properties props = new Properties();
+            props.load(is);
+            return props;
+
+        } finally {
+            is.close();
+        }
     }
 
 }
