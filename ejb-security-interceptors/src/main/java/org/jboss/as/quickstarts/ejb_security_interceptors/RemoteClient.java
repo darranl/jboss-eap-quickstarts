@@ -16,13 +16,11 @@
  */
 package org.jboss.as.quickstarts.ejb_security_interceptors;
 
-import java.util.Hashtable;
+import static org.jboss.as.quickstarts.ejb_security_interceptors.EJBUtil.lookupSecuredEJB;
+import static org.jboss.as.quickstarts.ejb_security_interceptors.EJBUtil.lookupIntermediateEJB;
+import static org.jboss.as.quickstarts.ejb_security_interceptors.EJBUtil.registerClientSecurityInterceptor;
 
 import javax.ejb.EJBAccessException;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-
-import org.jboss.ejb.client.EJBClientContext;
 
 /**
  * The remote client responsible for making a number of calls to the server to demonstrate the capabilities of the interceptors.
@@ -31,8 +29,6 @@ import org.jboss.ejb.client.EJBClientContext;
  */
 public class RemoteClient {
 
-    private static final int CLIENT_INTERCEPTOR_ORDER = 0x99999;
-
     /**
      * @param args
      */
@@ -40,9 +36,8 @@ public class RemoteClient {
         System.out.println("\n\n\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
         System.out.println("{RC} Starting RemoteClient.");
         registerClientSecurityInterceptor();
-        SecuredEJBRemote remote = lookupEJB();
+        SecuredEJBRemote remote = lookupSecuredEJB();
 
-        
         System.out.println("{RC} Initial Call to getSecurityInformation() - " + remote.getSecurityInformation());
 
         System.out.println("{RC} Verifying methods requiring roles 'RoleOne' and 'RoleTwo' are inaccessible.");
@@ -59,7 +54,7 @@ public class RemoteClient {
         } catch (EJBAccessException e) {
             System.out.println("{RC} Call to roleTwoMethod was correctly rejected.");
         }
-        
+
         System.out.println("{RC} Now attempting calls as AppUserOne.");
         ClientSecurityInterceptor.setDesiredUser("AppUserOne");
 
@@ -80,7 +75,7 @@ public class RemoteClient {
         } catch (EJBAccessException e) {
             System.out.println("{RC} Call to roleTwoMethod was correctly rejected.");
         }
-        
+
         System.out.println("{RC} Now attempting calls as AppUserTwo.");
         ClientSecurityInterceptor.setDesiredUser("AppUserTwo");
 
@@ -100,7 +95,7 @@ public class RemoteClient {
             System.out.println("{RC} Call to roleTwoMethod was corectly accepted.");
         } catch (EJBAccessException e) {
             System.err.println("{RC} Call to roleTwoMethod was incorrectly rejected.");
-        }        
+        }
 
         ClientSecurityInterceptor.setDesiredUser(null);
         System.out.println("{RC} Back as ConnectionUser Call to getSecurityInformation() - " + remote.getSecurityInformation());
@@ -118,26 +113,13 @@ public class RemoteClient {
             System.err.println("{RC} Call to roleTwoMethod was incorectly accepted.");
         } catch (EJBAccessException e) {
             System.out.println("{RC} Call to roleTwoMethod was correctly rejected.");
-        }        
-        
+        }
+
+        IntermediateEJBRemote intermediate = lookupIntermediateEJB();
+        System.out.println("Calling intermediate bean.\n");
+        System.out.println(intermediate.makeTestCalls());
+
         System.out.println("\n\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n\n");
-    }
-
-    private static void registerClientSecurityInterceptor() {
-        final EJBClientContext ejbClientContext = EJBClientContext.requireCurrent();
-
-        final ClientSecurityInterceptor clientInterceptor = new ClientSecurityInterceptor();
-
-        ejbClientContext.registerInterceptor(CLIENT_INTERCEPTOR_ORDER, clientInterceptor);
-    }
-
-    private static SecuredEJBRemote lookupEJB() throws Exception {
-        final Hashtable jndiProperties = new Hashtable();
-        jndiProperties.put(Context.URL_PKG_PREFIXES, "org.jboss.ejb.client.naming");
-        final Context context = new InitialContext(jndiProperties);
-
-        return (SecuredEJBRemote) context.lookup("ejb:/jboss-as-ejb-security-interceptors/SecuredEJB!"
-                + SecuredEJBRemote.class.getName());
     }
 
 }

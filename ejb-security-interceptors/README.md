@@ -92,6 +92,38 @@ provide a custom check.
 
   protected boolean delegationAcceptable(String requestedUser, OuterUserCredential connectionUser);   
 
+Server to Server Connection
+-------------------------
+
+For the purpose of the quickstart we just need an outbound connection that loops back to the same server, this will be
+sufficient to demonstrate the server to server capabilities.
+
+Add the following security realm, note the Base64 password is for the ConnectionUser account created above.
+
+   <security-realm name="ejb-outbound-realm">
+      <server-identities>
+         <secret value="Q29ubmVjdGlvblBhc3N3b3JkMSE="/>
+      </server-identities>
+   </security-realm>
+            
+Within the socket-binding-group 'standard-sockets' add the following outbound connection: -
+
+   <outbound-socket-binding name="ejb-outbound">
+      <remote-destination host="localhost" port="4447"/>
+   </outbound-socket-binding>          
+
+Within the Remoting susbsytem add the following outbound connection: -
+
+   <outbound-connections>
+      <remote-outbound-connection name="ejb-outbound-connection" outbound-socket-binding-ref="ejb-outbound" security-realm="ejb-outbound-realm" username="ConnectionUser">
+         <properties>
+            <property name="SSL_ENABLED" value="false"/>
+         </properties>
+      </remote-outbound-connection>
+   </outbound-connections>
+
+
+
 
 Start JBoss Enterprise Application Platform 6 or JBoss AS 7
 -------------------------
