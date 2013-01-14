@@ -16,6 +16,7 @@
  */
 package org.jboss.as.quickstarts.ejb_security_interceptors;
 
+import java.security.Principal;
 import java.util.Map;
 
 import org.jboss.ejb.client.EJBClientInterceptor;
@@ -36,6 +37,15 @@ public class ClientSecurityInterceptor implements EJBClientInterceptor {
 
     public void handleInvocation(EJBClientInvocationContext context) throws Exception {
         System.out.println("ClientSecurityInterceptor - handleInvocation");
+
+        String desiredUser = ClientSecurityInterceptor.desiredUser;
+        if (desiredUser == null) {
+            Principal currentPrincipal = SecurityActions.getPrincipal();
+            if (currentPrincipal != null) {
+                desiredUser = currentPrincipal.getName();
+                System.out.println("Auto Detected Desired Principal - " + desiredUser);
+            }
+        }
 
         if (desiredUser != null) {
             Map<String, Object> contextData = context.getContextData();

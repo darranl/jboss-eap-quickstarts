@@ -45,6 +45,22 @@ public class IntermediateEJB implements IntermediateEJBRemote {
 
             sb.append("SecuredEJBRemote.getSecurityInformation()=").append(remote.getSecurityInformation()).append("\n");
 
+            try {
+                sb.append("Can call roleOneMethod=");
+                remote.roleOneMethod();
+                sb.append("true\n");
+            } catch (Exception e) {
+                sb.append("false\n");
+            }
+
+            try {
+                sb.append("Can call roleTwoMethod=");
+                remote.roleTwoMethod();
+                sb.append("true\n");
+            } catch (Exception e) {
+                sb.append("false\n");
+            }
+
             sb.append("* * IntermediateEJB - End Testing * * ");
             return sb.toString();
         } catch (Exception e) {

@@ -76,7 +76,10 @@ public class ServerSecurityInterceptor {
         SecurityContext cachedSecurityContext = null;
         boolean contextSet = false;
         try {
-            if (desiredUser != null && connectionUser != null) {
+            if (desiredUser != null && connectionUser != null
+                    && (desiredUser.getName().equals(connectionUser.getName()) == false)) {
+                // The final part of this check is to verify that the change does actually indicate a change in user.
+                
                 // We have been requested to switch user and have successfully identified the user from the connection
                 // so now we attempt the switch.
                 cachedSecurityContext = SecurityActions.securityContextSetPrincipalInfo(desiredUser, new OuterUserCredential(

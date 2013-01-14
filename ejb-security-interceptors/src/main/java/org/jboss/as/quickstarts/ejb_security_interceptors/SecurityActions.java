@@ -130,6 +130,10 @@ final class SecurityActions {
         securityContextActions().setSecurityContext(context);
     }
 
+    static Principal getPrincipal() {
+        return securityContextActions().getPrincipal();
+    }
+
     /**
      * @return The SecurityContext previously set if any.
      */
@@ -146,12 +150,18 @@ final class SecurityActions {
 
         void setSecurityContext(final SecurityContext context);
 
+        Principal getPrincipal();
+
         SecurityContext setPrincipalInfo(final Principal principal, final OuterUserCredential credential) throws Exception;
 
         SecurityContextActions NON_PRIVILEGED = new SecurityContextActions() {
 
             public void setSecurityContext(SecurityContext context) {
                 SecurityContextAssociation.setSecurityContext(context);
+            }
+
+            public Principal getPrincipal() {
+                return SecurityContextAssociation.getPrincipal();
             }
 
             public SecurityContext setPrincipalInfo(Principal principal, OuterUserCredential credential) throws Exception {
@@ -167,6 +177,13 @@ final class SecurityActions {
 
         SecurityContextActions PRIVILEGED = new SecurityContextActions() {
 
+            PrivilegedAction<Principal> GET_PRINCIPAL_ACTION = new PrivilegedAction<Principal>() {
+
+                public Principal run() {
+                    return NON_PRIVILEGED.getPrincipal();
+                }
+            };
+
             public void setSecurityContext(final SecurityContext context) {
                 AccessController.doPrivileged(new PrivilegedAction<Void>() {
 
@@ -175,6 +192,10 @@ final class SecurityActions {
                         return null;
                     }
                 });
+            }
+
+            public Principal getPrincipal() {
+                return AccessController.doPrivileged(GET_PRINCIPAL_ACTION);
             }
 
             public SecurityContext setPrincipalInfo(final Principal principal, final OuterUserCredential credential)
