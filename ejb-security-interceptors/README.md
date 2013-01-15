@@ -9,12 +9,50 @@ Target Product: EAP
 What is it?
 -----------
 
+By default for Remote calls to EJBs deployed to the application server the connection to the server is authenticated
+and then any request received over this connection is executed as the identity which authenticated the connection.  This
+is true for both client to server and server to server calls, where different identities are required from the same client
+this requires multiple connections to be opened to the server - each authenticated as a different identity.
 
+This quickstart offers an alternative solution where the identity used to authenticate the connection is given the permission
+to execute a request as a different user, this is achieved with the addition of the following three components: -
+ * A client side interceptor to pass the requested identity to the remote server.
+ * A server side interceptor to receive the identity and request that the call switches to that identity.
+ * A JAAS LoginModule to decide if the user of the connection is allowed to execute requests as the user specified.
+ 
+The quickstart then makes use of two EJBs to verify that the propagation and identity switching is happening as required,
+the first of these is the SecuredEJB which has three methods: -
+
+    String getSecurityInformation();
+    boolean roleOneMethod();
+    boolean roleTwoMethod();
+
+The first of these methods can be called by all users that are created in the steps below, the purpose of the method is to 
+return a String containing the name of the Principal that called the EJB and also the results of checking if the user has the
+roles 'RoleOne' and 'RoleTwo' e.g.
+
+   [Principal={ConnectionUser}, In role {User}=true, In role {RoleOne}=false, In role {RoleTwo}=false]
+   
+The next two methods are annotated to require that the calling user has roles 'RoleOne' and 'RoleTwo' respectively.
+
+The next EJB is the 'IntermediateEJB', this EJB contains a single method and it's purpose is to make use of a remote connection 
+and invoke each of the methods on the 'SecuredEJB' - a summary is then returned with the outcome of the calls.
+
+Finally the class 'RemoteClient' is a stand alone client to make the calls, the client makes calls using the identity of 
+the connection established and also makes calls switching the identity to the users that are subsequently defined.
+
+One point to keep in mind is that for the server to server propagation scenarios in normal circumstances this would be to 
+servers that are truely remote to each other - however for the purpose of the quickstart we make use of a loopback connection
+to the same server so we don't need two servers just to run the test.               
 
 System requirements
 -------------------
 
+This quick start is based around JBoss AS 7.2.0 or JBoss EAP 6.1.0 using the default standalone configuration plus the
+modifications described here.
 
+If you are reviewing this quickstart with a view to making use of this approach within your own environment it is still
+recommended to try this using a clean installation first and then porting to your own environment. 
 
 
 Configure Maven
@@ -122,12 +160,14 @@ Within the Remoting susbsytem add the following outbound connection: -
       </remote-outbound-connection>
    </outbound-connections>
 
-
-
-
 Start JBoss Enterprise Application Platform 6 or JBoss AS 7
 -------------------------
 
+1. Open a command line and navigate to the root of the JBoss server directory.
+2. The following shows the command line to start the server with the web profile:
+
+        For Linux:   JBOSS_HOME/bin/standalone.sh
+        For Windows: JBOSS_HOME\bin\standalone.bat
 
 
 Build and Deploy the Quickstart
@@ -141,14 +181,20 @@ _NOTE: The following build command assumes you have configured your Maven user s
 
         mvn clean package jboss-as:deploy
 
-4. This will deploy `target/jboss-as-ejb-security.war` to the running instance of the server.
+4. This will deploy `target/jboss-as-ejb-security-interceptors.jar` to the running instance of the server.
 
 
-Access the application 
+Run the client 
 ---------------------
 
+The step here assumes you have already successfully deployed the EJBs to the server in the previous step
+and that your command prompt is still in the same folder.
 
+1.  Type this command to execute the client:
 
+        mvn exec:exec
+        
+        
 
 Undeploy the Archive
 --------------------

@@ -72,6 +72,7 @@ public class DelegationLoginModule extends AbstractServerLoginModule {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean login() throws LoginException {
         if (super.login() == true) {
