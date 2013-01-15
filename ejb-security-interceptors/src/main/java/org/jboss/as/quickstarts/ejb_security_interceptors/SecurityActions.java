@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source
  * Copyright 2013, Red Hat, Inc. and/or its affiliates, and individual
- * contributors by the @authors tag. See the copyright.txt in the 
+ * contributors by the @authors tag. See the copyright.txt in the
  * distribution for a full listing of individual contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -9,7 +9,7 @@
  * You may obtain a copy of the License at
  * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,  
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -29,10 +29,11 @@ import org.jboss.remoting3.Connection;
 import org.jboss.security.SecurityContext;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SecurityContextFactory;
+import org.jboss.security.SubjectInfo;
 
 /**
  * Security actions for this package only.
- * 
+ *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 final class SecurityActions {
@@ -150,6 +151,10 @@ final class SecurityActions {
         return securityContextActions().setPrincipalInfo(principal, credential);
     }
 
+    static Subject securityContextGetAuthenticatedSubject() {
+        return securityContextActions().getAuthenticatedSubject();
+    }
+
     private static SecurityContextActions securityContextActions() {
         return System.getSecurityManager() == null ? SecurityContextActions.NON_PRIVILEGED : SecurityContextActions.PRIVILEGED;
     }
@@ -165,6 +170,8 @@ final class SecurityActions {
         void setPrincipal(final Principal principal);
 
         SecurityContext setPrincipalInfo(final Principal principal, final OuterUserCredential credential) throws Exception;
+
+        Subject getAuthenticatedSubject();
 
         SecurityContextActions NON_PRIVILEGED = new SecurityContextActions() {
 
@@ -193,6 +200,18 @@ final class SecurityActions {
 
                 return currentContext;
             }
+
+            public Subject getAuthenticatedSubject() {
+                SecurityContext securityContext = SecurityContextAssociation.getSecurityContext();
+                if (securityContext != null) {
+                    SubjectInfo info = securityContext.getSubjectInfo();
+                    if (info != null) {
+                        return info.getAuthenticatedSubject();
+                    }
+                }
+
+                return null;
+            }
         };
 
         SecurityContextActions PRIVILEGED = new SecurityContextActions() {
@@ -209,6 +228,13 @@ final class SecurityActions {
                 public Void run() {
                     NON_PRIVILEGED.clear();
                     return null;
+                }
+            };
+
+            PrivilegedAction<Subject> GET_AUTHENTICATED_SUBJECT_ACTION = new PrivilegedAction<Subject>() {
+
+                public Subject run() {
+                    return NON_PRIVILEGED.getAuthenticatedSubject();
                 }
             };
 
@@ -252,6 +278,10 @@ final class SecurityActions {
                 } catch (PrivilegedActionException e) {
                     throw e.getException();
                 }
+            }
+
+            public Subject getAuthenticatedSubject() {
+                return AccessController.doPrivileged(GET_AUTHENTICATED_SUBJECT_ACTION);
             }
         };
 

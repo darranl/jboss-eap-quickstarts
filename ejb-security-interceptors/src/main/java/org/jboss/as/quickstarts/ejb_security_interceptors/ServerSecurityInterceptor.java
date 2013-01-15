@@ -26,7 +26,6 @@ import javax.resource.spi.IllegalStateException;
 
 import org.jboss.as.controller.security.SubjectUserInfo;
 import org.jboss.as.domain.management.security.RealmUser;
-import org.jboss.as.security.remoting.RemotingContext;
 import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.security.UserInfo;
 import org.jboss.security.SecurityContext;
@@ -42,17 +41,12 @@ public class ServerSecurityInterceptor {
 
     @AroundInvoke
     public Object aroundInvoke(final InvocationContext invocationContext) throws Exception {
-        System.out.println("ServerSecurityInterceptor - Start");
-
-        System.out.println("RemotingContext.isSet()=" + RemotingContext.isSet());
-
         Principal desiredUser = null;
         RealmUser connectionUser = null;
 
         Map<String, Object> contextData = invocationContext.getContextData();
         if (contextData.containsKey(DELEGATED_USER_KEY)) {
             desiredUser = new SimplePrincipal((String) contextData.get(DELEGATED_USER_KEY));
-            System.out.println("Remote side requesting call as " + desiredUser.getName());
 
             Connection con = SecurityActions.remotingContextGetConnection();
 
@@ -79,7 +73,7 @@ public class ServerSecurityInterceptor {
             if (desiredUser != null && connectionUser != null
                     && (desiredUser.getName().equals(connectionUser.getName()) == false)) {
                 // The final part of this check is to verify that the change does actually indicate a change in user.
-                
+
                 // We have been requested to switch user and have successfully identified the user from the connection
                 // so now we attempt the switch.
                 cachedSecurityContext = SecurityActions.securityContextSetPrincipalInfo(desiredUser, new OuterUserCredential(
@@ -91,15 +85,12 @@ public class ServerSecurityInterceptor {
 
             return invocationContext.proceed();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new EJBAccessException("Unable to attempt switching of user.");
         } finally {
             // switch back to original security context
             if (contextSet) {
                 SecurityActions.securityContextSet(cachedSecurityContext);
             }
-
-            System.out.println("ServerSecurityInterceptor - End");
         }
     }
 
