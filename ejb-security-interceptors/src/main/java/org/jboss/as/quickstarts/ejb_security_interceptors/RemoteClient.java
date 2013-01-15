@@ -85,7 +85,7 @@ public class RemoteClient {
             if (loginContext != null) {
                 loginContext.logout();
             }
-            System.out.println("* * Test Complete * * \n\n\n");
+            System.out.println("* * Test Complete * * \n\n");
         }
     }
 
@@ -171,7 +171,7 @@ public class RemoteClient {
             performTestingSecurityContext("AppUserThree", secured, intermediate);
             System.err.println("ERROR - We did not expect the switch to 'AppUserThree' to work.");
         } catch (Exception e) {
-            System.out.println("Call as 'AppUserThree' correctly rejected.");
+            System.out.println("Call as 'AppUserThree' correctly rejected.\n");
         }
 
         System.out
@@ -184,7 +184,7 @@ public class RemoteClient {
             performTestingClientLoginModule("AppUserThree", secured, intermediate);
             System.err.println("ERROR - We did not expect the switch to 'AppUserThree' to work.");
         } catch (Exception e) {
-            System.out.println("Call as 'AppUserThree' correctly rejected.");
+            System.out.println("Call as 'AppUserThree' correctly rejected.\n");
         }
 
         System.out.println("\n\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n\n");

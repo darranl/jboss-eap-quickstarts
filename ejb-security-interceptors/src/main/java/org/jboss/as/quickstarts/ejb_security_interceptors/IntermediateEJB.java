@@ -40,7 +40,6 @@ public class IntermediateEJB implements IntermediateEJBRemote {
         try {
             StringBuilder sb = new StringBuilder("* * IntermediateEJB - Begin Testing * * \n");
             registerClientSecurityInterceptor();
-            sb.append("Looking up SecuredEJBRemote\n");
             SecuredEJBRemote remote = lookupSecuredEJB();
 
             sb.append("SecuredEJBRemote.getSecurityInformation()=").append(remote.getSecurityInformation()).append("\n");
