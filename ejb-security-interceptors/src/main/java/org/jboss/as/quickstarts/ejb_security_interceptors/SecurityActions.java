@@ -130,8 +130,16 @@ final class SecurityActions {
         securityContextActions().setSecurityContext(context);
     }
 
-    static Principal getPrincipal() {
+    static void securityContextClear() {
+        securityContextActions().clear();
+    }
+
+    static Principal securityContextGetPrincipal() {
         return securityContextActions().getPrincipal();
+    }
+
+    static void securityContextSetPrincpal(final Principal principal) {
+        securityContextActions().setPrincipal(principal);
     }
 
     /**
@@ -150,7 +158,11 @@ final class SecurityActions {
 
         void setSecurityContext(final SecurityContext context);
 
+        void clear();
+
         Principal getPrincipal();
+
+        void setPrincipal(final Principal principal);
 
         SecurityContext setPrincipalInfo(final Principal principal, final OuterUserCredential credential) throws Exception;
 
@@ -160,8 +172,16 @@ final class SecurityActions {
                 SecurityContextAssociation.setSecurityContext(context);
             }
 
+            public void clear() {
+                SecurityContextAssociation.clearSecurityContext();
+            }
+
             public Principal getPrincipal() {
                 return SecurityContextAssociation.getPrincipal();
+            }
+
+            public void setPrincipal(final Principal principal) {
+                SecurityContextAssociation.setPrincipal(principal);
             }
 
             public SecurityContext setPrincipalInfo(Principal principal, OuterUserCredential credential) throws Exception {
@@ -184,6 +204,14 @@ final class SecurityActions {
                 }
             };
 
+            PrivilegedAction<Void> CLEAR_ACTION = new PrivilegedAction<Void>() {
+
+                public Void run() {
+                    NON_PRIVILEGED.clear();
+                    return null;
+                }
+            };
+
             public void setSecurityContext(final SecurityContext context) {
                 AccessController.doPrivileged(new PrivilegedAction<Void>() {
 
@@ -194,8 +222,22 @@ final class SecurityActions {
                 });
             }
 
+            public void clear() {
+                AccessController.doPrivileged(CLEAR_ACTION);
+            }
+
             public Principal getPrincipal() {
                 return AccessController.doPrivileged(GET_PRINCIPAL_ACTION);
+            }
+
+            public void setPrincipal(final Principal principal) {
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+
+                    public Void run() {
+                        NON_PRIVILEGED.setPrincipal(principal);
+                        return null;
+                    }
+                });
             }
 
             public SecurityContext setPrincipalInfo(final Principal principal, final OuterUserCredential credential)

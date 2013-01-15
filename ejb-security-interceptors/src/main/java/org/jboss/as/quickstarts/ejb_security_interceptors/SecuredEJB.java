@@ -38,9 +38,7 @@ public class SecuredEJB implements SecuredEJBRemote {
     private SessionContext context;
 
     @RolesAllowed("User")
-    public String getSecurityInformation() {
-        new Throwable("TRACE").printStackTrace();
-        
+    public String getSecurityInformation() {        
         StringBuilder sb = new StringBuilder("[");
         sb.append("Principal={").append(context.getCallerPrincipal().getName()).append("}, ");
         userInRole("User", sb).append(", ");

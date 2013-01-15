@@ -29,27 +29,14 @@ import org.jboss.ejb.client.EJBClientInvocationContext;
  */
 public class ClientSecurityInterceptor implements EJBClientInterceptor {
 
-    private static String desiredUser;
-
-    public static void setDesiredUser(final String desiredUser) {
-        ClientSecurityInterceptor.desiredUser = desiredUser;
-    }
-
     public void handleInvocation(EJBClientInvocationContext context) throws Exception {
         System.out.println("ClientSecurityInterceptor - handleInvocation");
 
-        String desiredUser = ClientSecurityInterceptor.desiredUser;
-        if (desiredUser == null) {
-            Principal currentPrincipal = SecurityActions.getPrincipal();
-            if (currentPrincipal != null) {
-                desiredUser = currentPrincipal.getName();
-                System.out.println("Auto Detected Desired Principal - " + desiredUser);
-            }
-        }
-
-        if (desiredUser != null) {
+        Principal currentPrincipal = SecurityActions.securityContextGetPrincipal();
+        if (currentPrincipal != null) {
+            System.out.println("Auto Detected Desired Principal - " + currentPrincipal.getName());
             Map<String, Object> contextData = context.getContextData();
-            contextData.put(ServerSecurityInterceptor.DELEGATED_USER_KEY, desiredUser);
+            contextData.put(ServerSecurityInterceptor.DELEGATED_USER_KEY, currentPrincipal.getName());
         }
 
         context.sendRequest();
