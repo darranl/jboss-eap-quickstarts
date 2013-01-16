@@ -1,10 +1,10 @@
 ejb-security-interceptors:  Using client and server side interceptors to switch the identity for an EJB call.
 ====================
-Author: Darran Lofthouse
-Level: Advanced
-Technologies: EJB, Security
-Summary: Demonstrates how interceptors can be used to switch the identity for EJB calls on a call by call basis.
-Target Product: EAP
+- Author: Darran Lofthouse
+- Level: Advanced
+- Technologies: EJB, Security
+- Summary: Demonstrates how interceptors can be used to switch the identity for EJB calls on a call by call basis.
+- Target Product: EAP 6.1.x
 
 What is it?
 -----------
@@ -13,11 +13,11 @@ By default, when you make a remote call to an EJB deployed to the application se
 
 Rather than open multiple client connections, this quickstart offers an alternative solution. The identity used to authenticate the connection is given permission to execute a request as a different user. This is achieved with the addition of the following three components: 
 
-1. A client side interceptor to pass the requested identity to the remote server.
-2. A server side interceptor to receive the identity and request that the call switches to that identity.
+1. A client side EJB interceptor (which is a JBoss specific API) to pass the requested identity to the remote server.
+2. A server side container interceptor (which is just a regular Java EE interceptor but configured in a JBoss specific way) to receive the identity and request that the call switches to that identity.
 3. A JAAS LoginModule to decide if the user of the connection is allowed to execute requests as the specified identity.
  
-The quickstart then makes use of two EJBs, `SecuredEJB` and `IntermediateEJB`, to verify that the propagation and identity switching is correct. 
+This quickstart then makes use of two EJBs, `SecuredEJB` and `IntermediateEJB`, to verify that the propagation and identity switching is correct.
 
 1. The `SecuredEJB` which has three methods: 
 
@@ -31,11 +31,31 @@ The first method can be called by all users that are created in this quickstart.
    
 The next two methods are annotated to require that the calling user is authorized for roles 'RoleOne' and 'RoleTwo' respectively.
 
-2. The `IntermediateEJB` contains a single method. Its purpose is to make use of a remote connection and invoke each of the methods on the `SecuredEJB`. A summary is then returned with the outcome of the calls.
+2. The `IntermediateEJB` contains a single method. Its purpose is to make use of a remote connection and invoke each of the methods on the `SecuredEJB`. This simulates a server-to-server invocation on an EJB. A summary is then returned with the outcome of the calls.
 
 Finally there is the `RemoteClient` stand-alone client. The client makes calls using the identity of the established connection and also makes calls switching the identity to the different users.
 
-In the real world, remote calls between servers in the servers-to-server scenario would truly be remote and separate. For the purpose of this quickstart, we make use of a loopback connection to the same server so we don't need two servers just to run the test. 
+In the real world, remote calls between servers in the servers-to-server scenario would truly be remote and separate. For the purpose of this quickstart, we make use of a loopback connection to the same server so we don't need two servers just to run the test.
+
+Note on EJB client interceptors
+-----------------------
+AS7/EAP6 allows client side interceptors for EJB invocations. Such interceptors are expected to implement the 'org.jboss.ejb.client.EJBClientInterceptor' interface. User applications can then plug in such interceptors in the 'EJBClientContext' either programatically or
+through the ServiceLoader mechanism.
+
+- The programmatic way involves calling the 'org.jboss.ejb.client.EJBClientContext.registerInterceptor(int order, EJBClientInterceptor interceptor)' API and passing the 'order' and the 'interceptor' instance. The 'order' is used to decide where exactly in the client interceptor chain, this 'interceptor' is going to be placed.
+
+- The ServiceLoader mechanism is an alternate approach which involves creating a META-INF/services/org.jboss.ejb.client.EJBClientInterceptor file and placing/packaging it in the classpath of the client application. The rules for such a file are dictated by the [Java ServiceLoader Mechanism](http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html). This file is expected to contain in each separate line the fully qualified class name of the EJB client interceptor implementation, which is expected to be available in the classpath.
+EJB client interceptors added via the ServiceLoader mechanism are added to the end of the client interceptor chain, in the order they were found in the classpath.
+
+
+This quickstart uses the ServiceLoader mechanism for registering the EJB client interceptor and places the META-INF/services/org.jboss.ejb.client.EJBClientInterceptor in the classpath, with the following content:
+
+    # EJB client interceptor(s) that will be added to the end of the interceptor chain during an invocation
+    # on EJB. If these interceptors are to be added at a specific position, other than last, then use the
+    # programmatic API in the application to register it explicitly to the EJBClientContext
+
+    org.jboss.as.quickstarts.ejb_security_interceptors.ClientSecurityInterceptor
+
 
 System requirements
 -------------------
@@ -114,27 +134,27 @@ For the purpose of the quickstart we just need an outbound connection that loops
 
 Add the following security realm. Note the Base64 password is for the ConnectionUser account created above.
 
-   <security-realm name="ejb-outbound-realm">
+    <security-realm name="ejb-outbound-realm">
       <server-identities>
          <secret value="Q29ubmVjdGlvblBhc3N3b3JkMSE="/>
       </server-identities>
-   </security-realm>
+    </security-realm>
             
 Within the socket-binding-group 'standard-sockets' add the following outbound connection: 
 
-   <outbound-socket-binding name="ejb-outbound">
+    <outbound-socket-binding name="ejb-outbound">
       <remote-destination host="localhost" port="4447"/>
-   </outbound-socket-binding>          
+    </outbound-socket-binding>          
 
 Within the Remoting susbsytem add the following outbound connection: 
 
-   <outbound-connections>
+    <outbound-connections>
       <remote-outbound-connection name="ejb-outbound-connection" outbound-socket-binding-ref="ejb-outbound" security-realm="ejb-outbound-realm" username="ConnectionUser">
          <properties>
             <property name="SSL_ENABLED" value="false"/>
          </properties>
       </remote-outbound-connection>
-   </outbound-connections>
+    </outbound-connections>
 
 Start JBoss Enterprise Application Platform 6 or JBoss AS 7
 -------------------------
@@ -152,12 +172,19 @@ Build and Deploy the Quickstart
 _NOTE: The following build command assumes you have configured your Maven user settings. If you have not, you must include Maven setting arguments on the command line. See [Build and Deploy the Quickstarts](../README.md#buildanddeploy) for complete instructions and additional options._
 
 1. Make sure you have started the JBoss Server as described above.
-2. Open a command line and navigate to the root directory of this quickstart.
-3. Type this command to build and deploy the archive:
+2. Open a command line and navigate to the root directory of this quickstart and run the following command to build the project:
+    mvn clean install
+3. Then "cd" to the server-side sub module:
+    cd server-side
+4. Type this command to build and deploy the archive:
 
-        mvn clean package jboss-as:deploy
+        mvn jboss-as:deploy
 
-4. This will deploy `target/jboss-as-ejb-security-interceptors.jar` to the running instance of the server.
+This will deploy `target/jboss-as-ejb-security-interceptors.jar` to the running instance of the server.
+5, Now "cd" back to the root directory of this quickstart:
+    cd ..
+6. Now "cd" to the client module:
+    cd client/
 
 
 Run the client 
@@ -172,12 +199,14 @@ and that your command prompt is still in the same folder.
         
         
 
-Undeploy the Archive
+Undeploy the Archive (when done testing)
 --------------------
 
 1. Make sure you have started the JBoss Server as described above.
 2. Open a command line and navigate to the root directory of this quickstart.
-3. When you are finished testing, type this command to undeploy the archive:
+3. Now "cd" to the server-side module:
+    cd server-side/
+4. Type this command to undeploy the archive:
 
         mvn jboss-as:undeploy
 
