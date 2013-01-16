@@ -114,27 +114,27 @@ For the purpose of the quickstart we just need an outbound connection that loops
 
 Add the following security realm. Note the Base64 password is for the ConnectionUser account created above.
 
-   <security-realm name="ejb-outbound-realm">
+    <security-realm name="ejb-outbound-realm">
       <server-identities>
          <secret value="Q29ubmVjdGlvblBhc3N3b3JkMSE="/>
       </server-identities>
-   </security-realm>
+    </security-realm>
             
 Within the socket-binding-group 'standard-sockets' add the following outbound connection: 
 
-   <outbound-socket-binding name="ejb-outbound">
+    <outbound-socket-binding name="ejb-outbound">
       <remote-destination host="localhost" port="4447"/>
-   </outbound-socket-binding>          
+    </outbound-socket-binding>          
 
 Within the Remoting susbsytem add the following outbound connection: 
 
-   <outbound-connections>
+    <outbound-connections>
       <remote-outbound-connection name="ejb-outbound-connection" outbound-socket-binding-ref="ejb-outbound" security-realm="ejb-outbound-realm" username="ConnectionUser">
          <properties>
             <property name="SSL_ENABLED" value="false"/>
          </properties>
       </remote-outbound-connection>
-   </outbound-connections>
+    </outbound-connections>
 
 Start JBoss Enterprise Application Platform 6 or JBoss AS 7
 -------------------------
