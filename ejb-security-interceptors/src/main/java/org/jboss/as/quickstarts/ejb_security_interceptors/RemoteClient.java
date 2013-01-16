@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ejb.EJBAccessException;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -134,7 +135,7 @@ public class RemoteClient {
         try {
             secured.roleOneMethod();
             roleMethodSuccess = true;
-        } catch (Exception e) {
+        } catch (EJBAccessException e) {
             roleMethodSuccess = false;
         }
         System.out.println(String.format("* Can call roleOneMethod()=%b", roleMethodSuccess));
@@ -142,7 +143,7 @@ public class RemoteClient {
         try {
             secured.roleTwoMethod();
             roleMethodSuccess = true;
-        } catch (Exception e) {
+        } catch (EJBAccessException e) {
             roleMethodSuccess = false;
         }
         System.out.println(String.format("* Can call roleTwoMethod()=%b", roleMethodSuccess));
@@ -162,7 +163,7 @@ public class RemoteClient {
         IntermediateEJBRemote intermediate = lookupIntermediateEJB();
 
         System.out
-                .println("This first round of tests is using the SecurityContextAssociation API to set the desired Principal.\n\n");
+                .println("This first round of tests is using the (PicketBox) SecurityContextAssociation API to set the desired Principal.\n\n");
 
         performTestingSecurityContext(null, secured, intermediate);
         performTestingSecurityContext("AppUserOne", secured, intermediate);
@@ -175,7 +176,7 @@ public class RemoteClient {
         }
 
         System.out
-                .println("This second round of tests is using the ClientLoginModule with LoginContext API to set the desired Principal.\n\n");
+                .println("This second round of tests is using the (PicketBox) ClientLoginModule with LoginContext API to set the desired Principal.\n\n");
 
         performTestingClientLoginModule(null, secured, intermediate);
         performTestingClientLoginModule("AppUserOne", secured, intermediate);
