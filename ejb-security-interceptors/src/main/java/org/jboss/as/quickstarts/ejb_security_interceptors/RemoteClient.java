@@ -18,7 +18,7 @@ package org.jboss.as.quickstarts.ejb_security_interceptors;
 
 import static org.jboss.as.quickstarts.ejb_security_interceptors.EJBUtil.lookupIntermediateEJB;
 import static org.jboss.as.quickstarts.ejb_security_interceptors.EJBUtil.lookupSecuredEJB;
-import static org.jboss.as.quickstarts.ejb_security_interceptors.EJBUtil.registerClientSecurityInterceptor;
+
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -56,6 +56,7 @@ public class RemoteClient {
                 SecurityActions.securityContextSetPrincpal(new SimplePrincipal(user));
             }
 
+            System.out.println("-------------------------------------------------");
             System.out
                     .println(String.format("* * About to perform test as %s * *\n\n", user == null ? "ConnectionUser" : user));
 
@@ -63,6 +64,7 @@ public class RemoteClient {
         } finally {
             SecurityActions.securityContextClear();
             System.out.println("* * Test Complete * * \n\n\n");
+            System.out.println("-------------------------------------------------");
         }
     }
 
@@ -78,6 +80,7 @@ public class RemoteClient {
                 loginContext.login();
             }
 
+            System.out.println("-------------------------------------------------");
             System.out
                     .println(String.format("* * About to perform test as %s * *\n\n", user == null ? "ConnectionUser" : user));
 
@@ -87,6 +90,7 @@ public class RemoteClient {
                 loginContext.logout();
             }
             System.out.println("* * Test Complete * * \n\n");
+            System.out.println("-------------------------------------------------");
         }
     }
 
@@ -157,7 +161,6 @@ public class RemoteClient {
      */
     public static void main(String[] args) throws Exception {
         System.out.println("\n\n\n* * * * * * * * * * * * * * * * * * * * * * * * * * * * * *\n\n");
-        registerClientSecurityInterceptor();
 
         SecuredEJBRemote secured = lookupSecuredEJB();
         IntermediateEJBRemote intermediate = lookupIntermediateEJB();
