@@ -35,7 +35,28 @@ The next two methods are annotated to require that the calling user is authorize
 
 Finally there is the `RemoteClient` stand-alone client. The client makes calls using the identity of the established connection and also makes calls switching the identity to the different users.
 
-In the real world, remote calls between servers in the servers-to-server scenario would truly be remote and separate. For the purpose of this quickstart, we make use of a loopback connection to the same server so we don't need two servers just to run the test. 
+In the real world, remote calls between servers in the servers-to-server scenario would truly be remote and separate. For the purpose of this quickstart, we make use of a loopback connection to the same server so we don't need two servers just to run the test.
+
+Note on EJB client interceptors
+-----------------------
+AS7/EAP6 allows client side interceptors for EJB invocations. Such interceptors are expected to implement the 'org.jboss.ejb.client.EJBClientInterceptor' interface. User applications can then plug in such interceptors in the 'EJBClientContext' either programatically or
+through the ServiceLoader mechanism.
+
+- The programmatic way involves calling the 'org.jboss.ejb.client.EJBClientContext.registerInterceptor(int order, EJBClientInterceptor interceptor)' API and passing the 'order' and the 'interceptor' instance. The 'order' is used to decide where exactly in the client interceptor chain, this 'interceptor' is going to be placed.
+
+- The ServiceLoader mechanism is an alternate approach which involves creating a META-INF/services/org.jboss.ejb.client.EJBClientInterceptor file and placing/packaging it in the classpath of the client application. The rules for such a file are dictated by the [Java ServiceLoader Mechanism](http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html). This file is expected to contain in each separate line the fully qualified class name of the EJB client interceptor implementation, which is expected to be available in the classpath.
+EJB client interceptors added via the ServiceLoader mechanism are added to the end of the client interceptor chain, in the order they were found in the classpath.
+
+
+This quickstart uses the ServiceLoader mechanism for registering the EJB client interceptor and places the META-INF/services/org.jboss.ejb.client.EJBClientInterceptor in the classpath, with the following content:
+
+    # EJB client interceptor(s) that will be added to the end of the interceptor chain during an invocation
+    # on EJB. If these interceptors are to be added at a specific position, other than last, then use the
+    # programmatic API in the application to register it explicitly to the EJBClientContext
+
+    org.jboss.as.quickstarts.ejb_security_interceptors.ClientSecurityInterceptor
+
+
 
 System requirements
 -------------------
